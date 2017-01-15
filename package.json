@@ -1,0 +1,14 @@
+{
+  "name": "chimera",
+  "version": "0.1.0",
+  "description": "",
+  "main": "repl.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mārtiņš Veiskats",
+  "license": "ISC",
+  "dependencies": {
+    "immutable": "^3.8.1"
+  }
+}
