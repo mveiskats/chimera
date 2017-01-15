@@ -10,7 +10,8 @@ module.exports = evaluate;
 function isLiteral(expr) {
   return ((expr === null) ||
           ('string' === typeof(expr)) ||
-          ('number' === typeof(expr)));
+          ('number' === typeof(expr)) ||
+          ('boolean' === typeof(expr)));
 }
 
 function evaluate(expr, scope) {
@@ -45,5 +46,5 @@ function evaluate(expr, scope) {
 
 // Unintuitive naming ???
 function isSpecial(sym) {
-  return Symbol.for('set') == sym;
+  return Symbol.for('set') == sym || Symbol.for('fn') == sym || Symbol.for('if');
 }
