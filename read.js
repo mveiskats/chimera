@@ -1,11 +1,12 @@
 'use strict';
 
-module.exports = read;
+module.exports = readFromString;
 
 const immutable = require('immutable');
 
 const whitespace = ' \t\n';
 
+// TODO: use unicode character properties?
 function isWhitespace(ch) {
   return whitespace.includes(ch)
 }
@@ -38,9 +39,11 @@ class SyncStream {
   }
 }
 
-function read(str) {
-  var input = new SyncStream(str);
+function readFromString(str) {
+  return read(new SyncStream(str));
+}
 
+function read(input) {
   if (!input.eos())
   {
     if('(' === input.peek())
@@ -81,7 +84,7 @@ function readList(input) {
     if (null === input.peek())
       throw 'Unexpected end of stream';
 
-    result.push(readAtom(input));
+    result.push(read(input));
     skipWhitespace(input);
   }
 
