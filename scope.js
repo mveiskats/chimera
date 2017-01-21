@@ -8,13 +8,13 @@ const evaluate = require('./evaluate.js');
 
 var defaultBindings = symbolizeKeys({
   set: function(scope, name, value) {
-    return scope.set(name, evaluate(value, scope));
+    return scope.set(name, evaluate(scope, value));
   },
   fn: function(scope, args, ...body) {
     return function() {
       var result;
       for (var expr of body)
-        result = evaluate(expr, scope);
+        result = evaluate(scope, expr);
 
       return result;
     }
@@ -32,10 +32,10 @@ var defaultBindings = symbolizeKeys({
     return true;
   },
   if: function(scope, condition, thenClause, elseClause) {
-    if (evaluate(condition, scope))
-      return evaluate(thenClause);
+    if (evaluate(scope, condition))
+      return evaluate(scope, thenClause);
     else
-      return evaluate(elseClause);
+      return evaluate(scope, elseClause);
   }
 });
 

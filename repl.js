@@ -1,13 +1,11 @@
 'use strict';
 
-
 process.on('SIGINT', function() {
-    console.log("Caught interrupt signal");
+  console.log("Caught interrupt signal");
 
-    if (i_should_exit)
-        process.exit();
+  if (i_should_exit)
+    process.exit();
 });
-
 
 const read = require('./read.js');
 const write = require('./write.js');
@@ -29,7 +27,7 @@ function repl() {
 
   input.on('line', (line) => {
     try {
-      console.log(write(evaluate(read(line), globalScope)));
+      console.log(write(evaluate(globalScope, read(line))));
     } catch (err) {
       console.error(err);
     }

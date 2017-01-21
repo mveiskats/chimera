@@ -14,7 +14,7 @@ function isLiteral(expr) {
           ('boolean' === typeof(expr)));
 }
 
-function evaluate(expr, scope) {
+function evaluate(scope, expr) {
   if (isLiteral(expr))
     return expr;
   else if ('symbol' === typeof(expr)) {
@@ -30,10 +30,10 @@ function evaluate(expr, scope) {
     var name = expr.first();
     var args = expr.rest();
 
-    var f = evaluate(name, scope);
+    var f = evaluate(scope, name);
 
     if (!isSpecial(name))
-      args = args.map((a) => evaluate(a, scope));
+      args = args.map((a) => evaluate(scope, a));
 
     if ('function' !== typeof(f))
       throw write(name) + ' is not a function!';
