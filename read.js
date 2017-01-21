@@ -3,6 +3,7 @@
 module.exports = readFromString;
 
 const immutable = require('immutable');
+const util = require('./util.js');
 
 const whitespace = ' \t\n';
 
@@ -11,36 +12,8 @@ function isWhitespace(ch) {
   return whitespace.includes(ch)
 }
 
-// TODO: implement for stream reading?
-class SyncStream {
-  constructor(str) {
-    this._input = str
-    this.pos = 0;
-    this.row = 0;
-    this.col = 0;
-  }
-
-  peek() {
-    if(this.pos >= this._input.length)
-      return null;
-    else
-      return this._input[this.pos];
-  }
-
-  read() {
-    if(this.pos >= this._input.length)
-      return null;
-    else
-      return this._input[this.pos++];
-  }
-
-  eos() {
-    return this.pos >= this._input.length;
-  }
-}
-
 function readFromString(str) {
-  return read(new SyncStream(str));
+  return read(new util.SyncStream(str));
 }
 
 function read(input) {
@@ -97,11 +70,34 @@ function readString(input) {
   input.read(); // opening apostrophe
   var result = '';
 
+  const escapes = {
+    'b': '\b',
+    'f': '\f',
+    'n': '\n',
+    'r': '\r',
+    't': '\t',
+    'v': '\v',
+    '0': '\0',
+    '\'': '\'',
+    '"': '"',
+    '\\': '\\'
+  }
+
   while("'" !== input.peek()) {
     if (null === input.peek())
       throw 'Unexpected end of stream';
 
-    result += input.read();
+    var ch = input.read();
+    if (ch === '\\') {
+      ch = input.read();
+      if (null === ch)
+        throw 'Unexpected end of stream';
+
+      result += (null !== escapes[ch] ? escapes[ch] : ch)
+    } else {
+      result += input.read();
+    }
+
   }
 
   input.read(); // closing apostrophe
