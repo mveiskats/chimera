@@ -2,7 +2,6 @@
 
 const immutable = require('immutable');
 
-const util = require('./util.js');
 const write = require('./write.js');
 
 module.exports = evaluate;
@@ -19,7 +18,7 @@ function evaluate(scope, expr) {
     return expr;
   else if ('symbol' === typeof(expr)) {
     if (undefined === scope.get(expr))
-      throw util.symbolName(expr) + ' is not defined';
+      throw Symbol.keyFor(expr) + ' is not defined';
 
     return scope.get(expr);
 
@@ -46,5 +45,7 @@ function evaluate(scope, expr) {
 
 // Unintuitive naming ???
 function isSpecial(sym) {
-  return Symbol.for('set') == sym || Symbol.for('fn') == sym || Symbol.for('if');
+  return Symbol.for('set') == sym ||
+    Symbol.for('fn') == sym ||
+    Symbol.for('if') == sym;
 }

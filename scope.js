@@ -2,6 +2,7 @@
 
 module.exports = Scope;
 
+const SourceStream = require('./source-stream.js');
 const read = require('./read.js');
 const write = require('./write.js');
 const evaluate = require('./evaluate.js');
@@ -20,7 +21,7 @@ var defaultBindings = symbolizeKeys({
     }
   },
   read: function(scope, str) {
-    return read(str);
+    return read(new SourceStream(str));
   },
   write: function(scope, expr) {
     return write(expr);
@@ -36,6 +37,10 @@ var defaultBindings = symbolizeKeys({
       return evaluate(scope, thenClause);
     else
       return evaluate(scope, elseClause);
+  },
+  print: function(scope, str) {
+    process.stdout.write(str.toString());
+    return str;
   }
 });
 

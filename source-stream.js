@@ -1,13 +1,11 @@
 'use strict';
 
-exports.symbolName = (sym) => sym.toString().slice(7, -1);
-
 // TODO: implement for stream reading?
-exports.SyncStream = class SyncStream {
+module.exports = class SourceStream {
   constructor(str) {
     this._input = str
     this.pos = 0;
-    this.row = 0;
+    this.row = 1;
     this.col = 0;
   }
 
@@ -19,6 +17,13 @@ exports.SyncStream = class SyncStream {
   }
 
   read() {
+    // Keep track of current line and column
+    this.col++;
+    if (isNewLine(this._input[this.pos])) {
+      this.row++;
+      this.col = 0;
+    }
+
     if(this.pos >= this._input.length)
       return null;
     else
@@ -29,3 +34,7 @@ exports.SyncStream = class SyncStream {
     return this.pos >= this._input.length;
   }
 };
+
+function isNewLine(ch) {
+  return '\n' === ch;
+}

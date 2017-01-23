@@ -1,9 +1,10 @@
 'use strict';
 
-module.exports = readFromString;
+module.exports = read;
 
 const immutable = require('immutable');
-const util = require('./util.js');
+const SourceStream = require('./source-stream.js');
+const sourceError = require('./source-error.js')
 
 const whitespace = ' \t\n';
 
@@ -12,20 +13,22 @@ function isWhitespace(ch) {
   return whitespace.includes(ch)
 }
 
-function readFromString(str) {
-  return read(new util.SyncStream(str));
-}
+function read(input, eosValue) {
+  skipWhitespace(input);
 
-function read(input) {
   if (!input.eos())
   {
     if('(' === input.peek())
       return readList(input);
+    else if (')' === input.peek())
+      sourceError(input, "Unexpected ')'");
     else if("'" === input.peek())
       return readString(input);
     else
       return readAtom(input);
   }
+
+  return eosValue;
 }
 
 function skipWhitespace(input) {
@@ -95,9 +98,8 @@ function readString(input) {
 
       result += (null !== escapes[ch] ? escapes[ch] : ch)
     } else {
-      result += input.read();
+      result += ch;
     }
-
   }
 
   input.read(); // closing apostrophe

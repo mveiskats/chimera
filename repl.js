@@ -7,6 +7,7 @@ process.on('SIGINT', function() {
     process.exit();
 });
 
+const SourceStream = require('./source-stream.js');
 const read = require('./read.js');
 const write = require('./write.js');
 const evaluate = require('./evaluate.js');
@@ -23,11 +24,17 @@ function repl() {
     prompt: '()> '
   });
 
+  var eos = Symbol();
+
   input.prompt();
 
   input.on('line', (line) => {
     try {
-      console.log(write(evaluate(globalScope, read(line))));
+      var expr = read(new SourceStream(line), eos);
+      if (expr !== eos) {
+        var result = evaluate(globalScope, expr);
+        console.log(write(result));
+      }
     } catch (err) {
       console.error(err);
     }
