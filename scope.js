@@ -46,10 +46,6 @@ var defaultBindings = symbolizeKeys({
   write: function(scope, expr) {
     return write(expr);
   },
-  // TODO: only evaluate arguments up to first inequality
-  '=': function(scope, first, ...rest) {
-    return rest.every(function(elem) { return isEqual(first, elem) });
-  },
   if: function(scope, condition, thenClause, elseClause) {
     if (evaluate(scope, condition))
       return evaluate(scope, thenClause);
@@ -62,6 +58,19 @@ var defaultBindings = symbolizeKeys({
   },
   quote: function(scope, expr) {
     return expr;
+  },
+  // TODO: only evaluate arguments up to first inequality
+  '=': function(scope, first, ...rest) {
+    return rest.every(function(elem) { return isEqual(first, elem) });
+  },
+  not: function(scope, val) {
+    return !val;
+  },
+  or: function(scope, ...values) {
+    return values.some(function(val) { return val });
+  },
+  and: function(scope, ...values) {
+    return values.every(function(val) { return val });
   }
 });
 
