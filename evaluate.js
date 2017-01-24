@@ -22,7 +22,7 @@ function evaluate(scope, expr) {
 
     return scope.get(expr);
 
-  } else if (expr instanceof immutable.List) {
+  } else if (immutable.List.isList(expr)) {
     if (expr.isEmpty())
       throw 'Cannot evaluate empty list';
 
@@ -48,5 +48,5 @@ function isSpecial(sym) {
   return Symbol.for('set') == sym ||
     Symbol.for('fn') == sym ||
     Symbol.for('if') == sym ||
-    Symbol.for('quote');
+    Symbol.for('quote') == sym;
 }

@@ -2,20 +2,40 @@
 
 module.exports = Scope;
 
+const immutable = require('immutable');
+
 const SourceStream = require('./source-stream.js');
 const read = require('./read.js');
 const write = require('./write.js');
 const evaluate = require('./evaluate.js');
 
+function isEqual(a, b) {
+  var listEqual = function(l1, l2) {
+    return l1.every((item, idx) => isEqual(item, l2.get(idx)));
+  };
+
+  // Should list comparision even be here?
+  return (a === b) ||
+    (immutable.List.isList(a) &&
+     immutable.List.isList(b) &&
+     a.size === b.size &&
+     listEqual(a, b));
+}
+
 var defaultBindings = symbolizeKeys({
   set: function(scope, name, value) {
     return scope.set(name, evaluate(scope, value));
   },
-  fn: function(scope, args, ...body) {
-    return function() {
+  fn: function(lexicalScope, argNames, ...body) {
+    return function(dynamicScope, ...argValues) {
+      // Bind arguments
+      var localScope = new Scope(dynamicScope);
+      for (var i = 0; i < argNames.size; i++)
+        localScope.set(argNames.get(i), argValues[i]);
+
       var result;
       for (var expr of body)
-        result = evaluate(scope, expr);
+        result = evaluate(localScope, expr);
 
       return result;
     }
@@ -26,11 +46,9 @@ var defaultBindings = symbolizeKeys({
   write: function(scope, expr) {
     return write(expr);
   },
-  '=': function(scope, arg1, ...argn) {
-    for(var i = 0; i < argn.length; i++)
-      if (arg1 !== argn[i]) return false;
-
-    return true;
+  // TODO: only evaluate arguments up to first inequality
+  '=': function(scope, first, ...rest) {
+    return rest.every(function(elem) { return isEqual(first, elem) });
   },
   if: function(scope, condition, thenClause, elseClause) {
     if (evaluate(scope, condition))
@@ -41,6 +59,9 @@ var defaultBindings = symbolizeKeys({
   print: function(scope, str) {
     process.stdout.write(str.toString());
     return str;
+  },
+  quote: function(scope, expr) {
+    return expr;
   }
 });
 
@@ -59,16 +80,14 @@ function symbolizeKeys(obj) {
   return result;
 }
 
-function Scope(b = {}) {
-  // TODO: inherit instead of exposing directly
-  this.bindings = defaultBindings;
-
+function Scope(parent = null) {
+  this._bindings = Object.create(parent && parent._bindings || defaultBindings);
 }
 
 Scope.prototype.get = function(name) {
-  return this.bindings[name];
+  return this._bindings[name];
 }
 
 Scope.prototype.set = function(name, value) {
-  return this.bindings[name] = value;
+  return this._bindings[name] = value;
 }
