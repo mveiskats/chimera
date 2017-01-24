@@ -47,5 +47,6 @@ function evaluate(scope, expr) {
 function isSpecial(sym) {
   return Symbol.for('set') == sym ||
     Symbol.for('fn') == sym ||
-    Symbol.for('if') == sym;
+    Symbol.for('if') == sym ||
+    Symbol.for('quote');
 }
