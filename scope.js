@@ -21,73 +21,69 @@ function isEqual(a, b) {
      a.size === b.size &&
      listEqual(a, b));
 }
+var defaultBindings = {};
 
-var defaultBindings = symbolizeKeys({
-  set: function(scope, name, value) {
-    return scope.set(name, evaluate(scope, value));
-  },
-  fn: function(lexicalScope, argNames, ...body) {
-    return function(dynamicScope, ...argValues) {
-      // Bind arguments
-      var localScope = new Scope(dynamicScope);
-      for (var i = 0; i < argNames.size; i++)
-        localScope.set(argNames.get(i), argValues[i]);
+function defFn(name, fn) {
+  return defaultBindings[Symbol.for(name)] = fn;
+}
 
-      var result;
-      for (var expr of body)
-        result = evaluate(localScope, expr);
+function defSpecial(name, fn) {
+  var result = defFn(name, fn);
+  result.isSpecial = true;
+  return result;
+}
 
-      return result;
-    }
-  },
-  read: function(scope, str) {
-    return read(new SourceStream(str));
-  },
-  write: function(scope, expr) {
-    return write(expr);
-  },
-  if: function(scope, condition, thenClause, elseClause) {
-    if (evaluate(scope, condition))
-      return evaluate(scope, thenClause);
-    else
-      return evaluate(scope, elseClause);
-  },
-  print: function(scope, str) {
-    process.stdout.write(str.toString());
-    return str;
-  },
-  quote: function(scope, expr) {
-    return expr;
-  },
-  // TODO: only evaluate arguments up to first inequality
-  '=': function(scope, first, ...rest) {
-    return rest.every(function(elem) { return isEqual(first, elem) });
-  },
-  not: function(scope, val) {
-    return !val;
-  },
-  or: function(scope, ...values) {
-    return values.some(function(val) { return val });
-  },
-  and: function(scope, ...values) {
-    return values.every(function(val) { return val });
+defSpecial('set', function(scope, name, value) {
+  return scope.set(name, evaluate(scope, value));
+});
+
+defSpecial('fn', function(lexicalScope, argNames, ...body) {
+  return function(dynamicScope, ...argValues) {
+    // Bind arguments
+    var localScope = new Scope(dynamicScope);
+    for (var i = 0; i < argNames.size; i++)
+      localScope.set(argNames.get(i), argValues[i]);
+
+    var result;
+    for (var expr of body)
+      result = evaluate(localScope, expr);
+
+    return result;
   }
 });
 
-function symbolizeKeys(obj) {
-  var result = {};
+defSpecial('if', function(scope, condition, thenClause, elseClause) {
+  if (evaluate(scope, condition))
+    return evaluate(scope, thenClause);
+  else
+    return evaluate(scope, elseClause);
+});
 
-  for (var key in obj) {
-    var val = obj[key];
+defSpecial('quote', function(scope, expr) { return expr; });
 
-    if ('string' === typeof(key))
-      key = Symbol.for(key);
+defFn('read', function(scope, str) { return read(new SourceStream(str)); });
+defFn('write', function(scope, expr) { return write(expr); });
 
-    result[key] = val;
-  }
+defFn('print', function(scope, str) {
+  str = str.toString();
+  process.stdout.write(str); return str;
+});
 
-  return result;
-}
+// TODO: only evaluate arguments up to first inequality
+defFn('=', function(scope, first, ...rest) {
+  return rest.every(function(elem) { return isEqual(first, elem) });
+});
+
+// Boolean operations
+defFn('not', function(scope, val) { return !val; });
+
+defFn('or', function(scope, ...values) {
+  return values.some(function(val) { return val });
+});
+
+defFn('and', function(scope, ...values) {
+  return values.every(function(val) { return val });
+});
 
 function Scope(parent = null) {
   this._bindings = Object.create(parent && parent._bindings || defaultBindings);

@@ -31,7 +31,7 @@ function evaluate(scope, expr) {
 
     var f = evaluate(scope, name);
 
-    if (!isSpecial(name))
+    if (!f.isSpecial)
       args = args.map((a) => evaluate(scope, a));
 
     if ('function' !== typeof(f))
@@ -41,12 +41,4 @@ function evaluate(scope, expr) {
   } else {
     throw "Don't know how to evaluate " + write(expr);
   }
-}
-
-// Unintuitive naming ???
-function isSpecial(sym) {
-  return Symbol.for('set') == sym ||
-    Symbol.for('fn') == sym ||
-    Symbol.for('if') == sym ||
-    Symbol.for('quote') == sym;
 }
