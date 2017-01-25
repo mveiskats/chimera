@@ -33,22 +33,37 @@ function defSpecial(name, fn) {
   return result;
 }
 
-defSpecial('set', function(scope, name, value) {
+var setFn = defSpecial('set', function(scope, name, value) {
   return scope.set(name, evaluate(scope, value));
+});
+
+var doFn = defSpecial('do', function(scope, ...body) {
+  var result;
+  for (var expr of body)
+    result = evaluate(scope, expr);
+
+  return result;
+});
+
+defSpecial('let', function(scope, bindings, ...body) {
+  var nestedScope = new Scope(scope);
+  if (!immutable.List.isList(bindings) || bindings.size % 2 === 1)
+    throw 'Invalid bindings - ' + write(bindings);
+
+  for(var i = 0; i < bindings.size; i += 2)
+    setFn(nestedScope, bindings.get(i), evaluate(scope, bindings.get(i + 1)));
+
+  return doFn(nestedScope, ...body);
 });
 
 defSpecial('fn', function(lexicalScope, argNames, ...body) {
   return function(dynamicScope, ...argValues) {
     // Bind arguments
-    var localScope = new Scope(dynamicScope);
+    var nestedScope = new Scope(dynamicScope);
     for (var i = 0; i < argNames.size; i++)
-      localScope.set(argNames.get(i), argValues[i]);
+      nestedScope.set(argNames.get(i), argValues[i]);
 
-    var result;
-    for (var expr of body)
-      result = evaluate(localScope, expr);
-
-    return result;
+    return doFn(nestedScope, ...body);
   }
 });
 

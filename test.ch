@@ -25,9 +25,16 @@
              (= (not true) false)
              (= (not false) true)))
 
-(assert 'Function definition'
+(assert 'Create list'
+        (= (list 1 2 3) (quote (1 2 3))))
+
+(assert 'Compose multiple expressions with do'
+        (= (do 1 2 (write 3)) '3'))
+
+(assert 'Bind variables with let'
+        (and (= (let (x 1) x) 1)
+             (= (let (x 1) (let (x 2) x) x) 1)))
+
+(assert 'Define function with fn'
         (and (= ((fn () 123)) 123)
              (= ((fn (x) (write x)) 1) '1')))
-
-(assert 'Create a list'
-        (= (list 1 2 3) (quote (1 2 3))))
