@@ -74,7 +74,6 @@ defFn('=', function(scope, first, ...rest) {
   return rest.every(function(elem) { return isEqual(first, elem) });
 });
 
-// Boolean operations
 defFn('not', function(scope, val) { return !val; });
 
 defFn('or', function(scope, ...values) {
@@ -83,6 +82,10 @@ defFn('or', function(scope, ...values) {
 
 defFn('and', function(scope, ...values) {
   return values.every(function(val) { return val });
+});
+
+defFn('list', function(scope, ...values) {
+  return immutable.List(values);
 });
 
 function Scope(parent = null) {

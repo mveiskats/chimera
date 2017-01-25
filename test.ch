@@ -24,3 +24,10 @@
              (= (and true true true) true)
              (= (not true) false)
              (= (not false) true)))
+
+(assert 'Function definition'
+        (and (= ((fn () 123)) 123)
+             (= ((fn (x) (write x)) 1) '1')))
+
+(assert 'Create a list'
+        (= (list 1 2 3) (quote (1 2 3))))
