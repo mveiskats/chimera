@@ -43,7 +43,7 @@ function readAtom(input) {
   while((ch = input.peek()) && !isWhitespace(ch) && ch !== ')')
     atom += input.read();
 
-  var intPattern = /^\d+$/;
+  var intPattern = /^-?\d+$/;
   if (atom.match(intPattern)) return parseInt(atom);
   if('nil' === atom) return null;
   if('true' === atom) return true;

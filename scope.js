@@ -33,7 +33,11 @@ function defSpecial(name, fn) {
   return result;
 }
 
-var setFn = defSpecial('set', function(scope, name, value) {
+var defineFn = defSpecial('def', function(scope, name, value) {
+  return scope.define(name, evaluate(scope, value));
+});
+
+defSpecial('set', function(scope, name, value) {
   return scope.set(name, evaluate(scope, value));
 });
 
@@ -51,7 +55,9 @@ defSpecial('let', function(scope, bindings, ...body) {
     throw 'Invalid bindings - ' + write(bindings);
 
   for(var i = 0; i < bindings.size; i += 2)
-    setFn(nestedScope, bindings.get(i), evaluate(scope, bindings.get(i + 1)));
+    defineFn(nestedScope,
+             bindings.get(i),
+             evaluate(scope, bindings.get(i + 1)));
 
   return doFn(nestedScope, ...body);
 });
@@ -61,7 +67,7 @@ defSpecial('fn', function(lexicalScope, argNames, ...body) {
     // Bind arguments
     var nestedScope = new Scope(dynamicScope);
     for (var i = 0; i < argNames.size; i++)
-      nestedScope.set(argNames.get(i), argValues[i]);
+      nestedScope.define(argNames.get(i), argValues[i]);
 
     return doFn(nestedScope, ...body);
   }
@@ -75,6 +81,14 @@ defSpecial('if', function(scope, condition, thenClause, elseClause) {
 });
 
 defSpecial('quote', function(scope, expr) { return expr; });
+
+defSpecial('while-do', function(scope, condition, ...body) {
+  var result = null;
+  while(evaluate(scope, condition))
+    result = doFn(scope, ...body);
+
+  return result;
+});
 
 defFn('read', function(scope, str) { return read(new SourceStream(str)); });
 defFn('write', function(scope, expr) { return write(expr); });
@@ -103,14 +117,51 @@ defFn('list', function(scope, ...values) {
   return immutable.List(values);
 });
 
+defFn('+', function(scope, ...values) {
+  return values.reduce(function(a, b) { return a + b; }, 0);
+});
+
+defFn('-', function(scope, minuend, ...subtrahends) {
+  if (0 === subtrahends.length)
+    return -minuend;
+  else
+    return subtrahends.reduce(function(a, b) { return a - b; }, minuend);
+});
+
 function Scope(parent = null) {
-  this._bindings = Object.create(parent && parent._bindings || defaultBindings);
+  this._parent = parent;
+  this._bindings = parent ? {} : defaultBindings;
+}
+
+Scope.prototype.define = function(name, value) {
+  if (this._bindings[name])
+    throw Symbol.keyFor(name) + ' is already defined'
+
+  return this._bindings[name] = value;
 }
 
 Scope.prototype.get = function(name) {
-  return this._bindings[name];
+  var val = this._bindings[name];
+
+  if (undefined === val) {
+    if (!this._parent)
+      throw Symbol.keyFor(name) + ' is not defined';
+
+    return this._parent.get(name);
+  }
+
+  return val;
 }
 
 Scope.prototype.set = function(name, value) {
+  var oldVal = this._bindings[name];
+
+  if (undefined === oldVal) {
+    if (!this._parent)
+      throw Symbol.keyFor(name) + ' is not defined';
+
+    return this._parent.set(name, value)
+  }
+
   return this._bindings[name] = value;
 }

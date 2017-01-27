@@ -1,9 +1,22 @@
-(set assert
+(def test-count 0)
+(def fail-count 0)
+
+(def assert
      (fn (msg condition)
+       (set test-count (+ test-count 1))
        (print msg)
        (print ' - ')
-       (print (if condition 'ok' 'failed'))
+       (print (if condition 'ok' (do (set fail-count (+ fail-count 1))
+                                     'failed')))
        (print '\n')))
+
+(def print-summary
+     (fn ()
+       (print '\n')
+       (print test-count)
+       (print ' tests, ')
+       (print fail-count)
+       (print ' failures\n')))
 
 (assert 'Read boolean'
         (and (= (read 'true') true)
@@ -14,8 +27,9 @@
 (assert 'Read atom with whitespace' (= (read ' 1 ') 1))
 (assert 'Read list with whitespace' (= (read ' ( 1 ) ') (read '(1)')))
 
-(if true (set foo 1) (set foo 2))
-(assert 'Only evaluate one branch of if' (= foo 1))
+(let (foo nil)
+  (if true (set foo 1) (set foo 2))
+  (assert 'Only evaluate one branch of if' (= foo 1)))
 
 (assert 'Boolean operations'
         (and (= (or false false false) false)
@@ -38,3 +52,13 @@
 (assert 'Define function with fn'
         (and (= ((fn () 123)) 123)
              (= ((fn (x) (write x)) 1) '1')))
+
+(assert 'Addition'
+        (and (= (+ 1 2 3) 6)
+             (= (+ 1) 1)))
+
+(assert 'Subtraction and negation'
+        (and (= (- 3 2) 1)
+             (= (- 3) -3)))
+
+(print-summary)
