@@ -18,6 +18,9 @@
        (print fail-count)
        (print ' failures\n')))
 
+(assert 'Read nil' (= (read 'nil') nil))
+(assert 'Write nil' (= (write nil) 'nil'))
+
 (assert 'Read boolean'
         (and (= (read 'true') true)
              (= (read 'false') false)))
