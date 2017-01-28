@@ -7,28 +7,36 @@ const SourceStream = require('./source-stream.js');
 const sourceError = require('./source-error.js')
 
 const whitespace = ' \t\n';
+const nonConstituents = '()"';
 
 // TODO: use unicode character properties?
 function isWhitespace(ch) {
   return whitespace.includes(ch)
 }
 
+function isConstituent(ch) {
+  return !nonConstituents.includes(ch);
+}
+
+var readMacros = {
+  '"': readString,
+  '(': readList,
+  ')': function(input, _) { sourceError(input, "Unexpected ')'"); }
+}
+
 function read(input, eosValue) {
-  skipWhitespace(input);
+  while(true) {
+    if (input.eos()) return eosValue;
 
-  if (!input.eos())
-  {
-    if('(' === input.peek())
-      return readList(input);
-    else if (')' === input.peek())
-      sourceError(input, "Unexpected ')'");
-    else if("'" === input.peek())
-      return readString(input);
+    var ch = input.peek();
+
+    if (isWhitespace(ch))
+      input.read();
+    else if (readMacros[ch])
+      return readMacros[ch](input, input.read());
     else
-      return readAtom(input);
+      return readToken(input);
   }
-
-  return eosValue;
 }
 
 function skipWhitespace(input) {
@@ -37,7 +45,7 @@ function skipWhitespace(input) {
   }
 }
 
-function readAtom(input) {
+function readToken(input) {
   var atom = '';
   var ch;
   while((ch = input.peek()) && !isWhitespace(ch) && ch !== ')')
@@ -51,26 +59,27 @@ function readAtom(input) {
   return Symbol.for(atom);
 }
 
-function readList(input) {
-  input.read(); // opening bracket
+function readList(input, macroChar) {
   var result = [];
-  skipWhitespace(input);
 
-  while(')' !== input.peek()) {
-    if (null === input.peek())
-      throw 'Unexpected end of stream';
+  while(true) {
+    if (input.eos()) throw 'Unexpected end of stream';
 
-    result.push(read(input));
-    skipWhitespace(input);
+    var ch = input.peek();
+
+    if (')' === ch) {
+      input.read(); // closing char
+      return new immutable.List(result);
+    }
+
+    if (isWhitespace(ch))
+      input.read();
+    else
+      result.push(read(input));
   }
-
-  input.read(); // closing bracket
-
-  return new immutable.List(result);
 }
 
-function readString(input) {
-  input.read(); // opening apostrophe
+function readString(input, macroChar) {
   var result = '';
 
   const escapes = {
@@ -86,7 +95,7 @@ function readString(input) {
     '\\': '\\'
   }
 
-  while("'" !== input.peek()) {
+  while(macroChar !== input.peek()) {
     if (null === input.peek())
       throw 'Unexpected end of stream';
 
@@ -102,7 +111,7 @@ function readString(input) {
     }
   }
 
-  input.read(); // closing apostrophe
+  input.read(); // closing char
 
   return result;
 }
